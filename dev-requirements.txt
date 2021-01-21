@@ -1,0 +1,7 @@
+coverage
+pylama
+pylama-pylint
+sphinx
+wheel
+twine
+rich

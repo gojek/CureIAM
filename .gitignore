@@ -1,0 +1,26 @@
+# Ignore automatically generated files.
+venv
+.venv
+.coverage
+.coverage.*
+htmlcov/
+logs/
+_build/
+*.yaml
+*.yml
+*.json
+
+# Ignore files generated due to releases.
+uservenv
+build/
+IAMRecommending.egg-info/
+dist/
+
+# Ignore local development files.
+IAMRecommending.yaml
+
+# Ignore Vim swap files.
+*.sw?
+
+# Ignore Python cache files.
+*.pyc
