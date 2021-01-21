@@ -23,7 +23,7 @@ _log = logging.getLogger(__name__)
 class GCPCloudIAMRecommendations:
     """GCP cloud IAM recomendation plugin."""
 
-    def __init__(self, key_file_path, projects, processes=4, threads=30):
+    def __init__(self, key_file_path, projects='*', processes=4, threads=10):
         """Create an instance of :class:`GCPCloudIAMRecommendations` plugin.
 
         Arguments:
@@ -42,6 +42,20 @@ class GCPCloudIAMRecommendations:
         credentials = service_account.Credentials.from_service_account_file(
             self._key_file_path, scopes=_GCP_SCOPES)
 
+        # Scan needs to be done for list of projects or all the projects
+        # projects='*' indicates all projects
+        if self._projects == '*':
+            _log.info('Plugin started in Scan-All-Project-Mode')
+            # Get the list of all the projects available
+            self._projects = []
+            cloudresourcemanager_service = self._build_resource(
+                                            'cloudresourcemanager',
+                                            'v1')
+            for project in _get_resource_iterator(
+                cloudresourcemanager_service.projects(),
+                'projects'):
+                self._projects.append(project['projectId'])
+            _log.info('Projects %s', len(self._projects))
 
         # Service account key file also has the client email under the key
         # client_email. We will use this key file to get the client email for
@@ -55,8 +69,11 @@ class GCPCloudIAMRecommendations:
                        'error: %s: %s', self._key_file_path,
                        type(e).__name__, e)
 
-        _log.info('Initialized; key_file_path: %s; processes: %s; threads: %s',
-                  self._key_file_path, self._processes, self._threads)
+        _log.info('Initialized; key_file_path: %s; processes: %s; threads: %s;' 
+                  'projects to scan: %d',
+                  self._key_file_path, 
+                  self._processes, self._threads, 
+                  len(self._projects))
 
     def read(self):
         """Return a GCP cloud infrastructure configuration record.
