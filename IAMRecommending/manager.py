@@ -187,7 +187,7 @@ class Audit:
                 audit_version,
                 plugin_key,
                 config['plugins'][plugin_key],
-                self._store_queues + self._processor_queues
+                self._processor_queues + self._processor_queues
             )
             worker = mp.Process(target=workers.cloud_worker, args=args)
             self._cloud_workers.append(worker)

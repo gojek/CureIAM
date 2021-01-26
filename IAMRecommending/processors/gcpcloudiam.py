@@ -72,16 +72,14 @@ class GCPIAMRecommendationProcessor:
         Yields:
             dict: Processed record.
                 {
-                    'raw': { _raw_record_ }
-                    'processed': {
-                        'IAMRecommending_record': {
+                    'GCPIAMProcessor':  {
                             'record_type': 'iam_recommendation'
                             'recommendation_name' : name,
+                            'project': project,
                             'recommendation_description' : description,
                             'recommendation_action': content.operationGroups.operations[i],
                             'recommendetion_recommender_subtype': recommenderSubtype,
                             'recommendation_insights': associatedInsights
-                        }
                     }
                 }
         """
@@ -94,18 +92,77 @@ class GCPIAMRecommendationProcessor:
         if iam_raw_record is not None:
             recommendation_dict.update(
                 {
-                    'recommendation_name': iam_raw_record['name'],
+                    'project' : iam_raw_record['project'],
+                    'recommendation_id': iam_raw_record['name'],
                     'recommendation_description': iam_raw_record['description'],
                     'recommendation_actions' : iam_raw_record['content']['operationGroups'][0]['operations'],
                     'recommendetion_recommender_subtype': iam_raw_record['recommenderSubtype'],
-                    'recommendation_insights': iam_raw_record['associatedInsights']
+                    'recommendation_insights': [ i.get('insights') for i in iam_raw_record['associatedInsights']]
                 }
             )
-            yield {
-                    'GCPIAMProcessor':{
-                        'IAMRecommendation_record': recommendation_dict
+            # Identify the account type on which recommendation is fetched
+            # If iam_raw_record['recommenderSubtype'] is REPLACE_ROLE, then user 
+            # info will be present as iam_raw_record['content']['operationGroups']['operations'] list
+            _actor = ''
+            _actor_total_permissions = 0
+            _actor_exercised_permissions = 0
+            _actor_exercised_permissions_category = ''
+
+            for op_grp in iam_raw_record['content']['operationGroups']:
+                for op in op_grp['operations']:
+                    if op['action'] == 'remove':
+                        _actor = op['pathFilters']['/iamPolicy/bindings/*/members/*']
+                # After above parsing _actor would contain something like
+                # <account_type>:<account_id>
+                _actor_type, _actor = _actor.split(':')
+                recommendation_dict.update(
+                    {
+                    'account_type': _actor_type,
+                    'account_id': _actor
                     }
+                )
+
+            # Get all the Permissions the current actor have
+            # insights is a list, in case of multiple insights
+            # all insights will have same `currentTotalPermissionsCount`
+            # So we are good to include the results from the first one
+            # only.
+            insights = iam_raw_record.get('insights', None)
+            if insights:
+                _content = insights[0].get('content', None)
+                if _content:
+                    _actor_exercised_permissions = len(_content.get(
+                        'exercisedPermissions',
+                        []
+                    )) + len(
+                        _content.get(
+                            'inferredPermissions',
+                            []
+                        )
+                    )
+                    _actor_total_permissions = _content.get(
+                        'currentTotalPermissionsCount'
+                    )
+                    _actor_exercised_permissions_category = insights[0].get(
+                        'category',
+                        ''
+                    )
+
+            recommendation_dict.update(
+                {
+                    'account_total_permissions': _actor_total_permissions,
+                    'account_used_permissions': _actor_exercised_permissions,
+                    'account_permission_insights_category': _actor_exercised_permissions_category
                 }
+            )   
+
+            # Get the list of all permissions which are
+            # in REMOVE recommendation
+
+            yield { 
+                'GCPIAMRaw': iam_raw_record,
+                'GCPIAMProcessor':  recommendation_dict 
+            }
             
     def done(self):
         """Perform cleanup work.
