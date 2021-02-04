@@ -1,0 +1,95 @@
+"""IAM Risk score model class implementation
+"""
+
+import logging
+
+_log = logging.getLogger(__name__)
+
+class IAMRiskScoreModel:
+    """IAMRiskScoreModel plugin for GCP IAM Recommendation records."""
+
+    def __init__(self, record):
+        """Create an instance of :class:`IAMRiskScoreModel` plugin.
+        
+        This model class generates scores for the recommendation record.
+        Arguments:
+            record: dict for GCP record
+        """
+        self._record = record
+
+        self._score = {
+            'safe_to_apply_recommendation_score': None,
+            'safe_to_apply_recommendation_score_factors': None,
+            'risk_score': None,
+            'risk_score_factors': None,
+        }
+
+    def score(self):
+        """This function will return the score for a specific record
+        This will work on the paramters and will create risk score and
+        safe_to_apply_score
+        
+        paramters:
+        - account_type:
+            - service_account
+            - user_account
+            - group_account
+        - suggestion_type:
+            - REMOVE_ROLE
+            - REPLACE_ROLE
+            - REPLACE_ROLE_CUSTOMIZABLE
+        - recommendation_impact_type:
+            - Security
+        - inferred_parameters:
+            - used_permissions
+            - total_permissions
+
+        inferences:
+        - helpful_in_collector_enforement:
+            - safe_to_apply_recommendation_score ∝ (account_type == {user, group})
+            - safe_to_apply_recommendation_score ∝ (last time permissions used)
+            - safe_to_apply_recommendation_score 1/∝ (account_type == {service_account, terraform_account, provisioned throught IaC scripts})
+            - safe_to_apply_recommendation_score ∝ (suggestion_type == {REMOVE_ROLE}
+            - safe_to_apply_recommendation_score 1/∝ (suggestion_type == {REPLACE_ROLE, REPLACE_ROLE_CUSTOMIZABLE})
+            - safe_to_apply_recommendation_score 1/∝ (excess_permissions) -- Code Cracking changes ??
+        - helpful_in_auditing_dashabord:
+            - risk_index ∝ (account_type == {account_type == service_account})
+            - risk_index 1/∝ (account_type == {user, group})
+            - risk_index ∝ {excess_permissions}
+            - risk_index ∝ {recommendation_impact_type}
+            - risk_index ∝ {total_permissions}
+        """
+        _account_type = self._record['account_type']
+        _suggestion_type = self._record['account_permission_insights_category']
+        _used_permissions = int(self._record['account_used_permissions'])
+        _total_permissions = int(self._record['account_total_permissions']) \
+            if self._record['account_total_permissions'] is not None else 1
+
+        _excess_permissions = _total_permissions - _used_permissions
+        _excess_permissions_percent = _excess_permissions / _total_permissions
+
+        # Based on the parameters above lets calculate safety
+        if _account_type == 'user': 
+            safe_to_apply_recommendation_score = 30
+        elif _account_type == 'group':
+            safe_to_apply_recommendation_score = 20
+        else:
+            safe_to_apply_recommendation_score = 10
+        
+        if _suggestion_type == 'REMOVE_ROLE':
+            safe_to_apply_recommendation_score += 30
+        elif _suggestion_type == 'REPLACE_ROLE':
+            safe_to_apply_recommendation_score += 20
+        else:
+            safe_to_apply_recommendation_score += 10
+        
+        safe_to_apply_recommendation_score /= _excess_permissions_percent 
+
+        self._score.update(
+            {
+                'safe_to_apply_recommendation_score': round(safe_to_apply_recommendation_score),
+                'safe_to_apply_recommendation_score_factors': 3
+            }
+        )
+
+        return self._score

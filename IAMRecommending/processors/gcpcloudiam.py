@@ -4,6 +4,8 @@
 import json
 import logging
 
+from IAMRecommending.models.iamriskscore import IAMRiskScoreModel
+
 _log = logging.getLogger(__name__)
 
 class GCPIAMRecommendationProcessor:
@@ -86,7 +88,7 @@ class GCPIAMRecommendationProcessor:
         # Extract the different `IAMRecommending_record.recommendation_action.value`
         # from the gcpcloud.GCPCloudIAMRecommendations
 
-        iam_raw_record = record.get('GCPIAMRaw', {})
+        iam_raw_record = record.get('raw', {})
         recommendation_dict = dict()
 
         if iam_raw_record is not None:
@@ -160,8 +162,9 @@ class GCPIAMRecommendationProcessor:
             # in REMOVE recommendation
 
             yield { 
-                'GCPIAMRaw': iam_raw_record,
-                'GCPIAMProcessor':  recommendation_dict 
+                'raw': iam_raw_record,
+                'processor':  recommendation_dict ,
+                'score': IAMRiskScoreModel(recommendation_dict).score()
             }
             
     def done(self):

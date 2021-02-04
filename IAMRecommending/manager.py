@@ -187,7 +187,7 @@ class Audit:
                 audit_version,
                 plugin_key,
                 config['plugins'][plugin_key],
-                self._processor_queues + self._processor_queues
+                self._processor_queues
             )
             worker = mp.Process(target=workers.cloud_worker, args=args)
             self._cloud_workers.append(worker)
@@ -197,8 +197,6 @@ class Audit:
         _send_email(self._config.get('email'), self._audit_key,
                     self._start_time)
 
-        begin_record = {'com': {'record_type': 'begin_audit'}}
-
         # Start store and alert workers.
         for w in self._store_workers + self._alert_workers:
             w.start()
@@ -206,10 +204,6 @@ class Audit:
         # Start cloud and processor workers.
         for w in self._cloud_workers + self._processor_workers:
             w.start()
-
-        # Send begin_audit record to each sotre and alert plugin.
-        for q in self._store_queues + self._alert_queues:
-            q.put(begin_record)
 
         # It would have been nice if we could guarantee that the
         # begin_audit records are sent to each store and alert before
@@ -236,11 +230,8 @@ class Audit:
         for w in self._cloud_workers:
             w.join()
 
-        end_record = {'com': {'record_type': 'end_audit'}}
-
         # Stop store workers.
         for q in self._store_queues:
-            q.put(end_record)
             q.put(None)
 
         # Stop processor workers.
@@ -257,7 +248,6 @@ class Audit:
 
         # Stop alert workers.
         for q in self._alert_queues:
-            q.put(end_record)
             q.put(None)
 
         # Wait for alert workers to terminate.
