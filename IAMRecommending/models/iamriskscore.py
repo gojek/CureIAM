@@ -68,6 +68,8 @@ class IAMRiskScoreModel:
         _excess_permissions = _total_permissions - _used_permissions
         _excess_permissions_percent = _excess_permissions / _total_permissions
 
+        safe_to_apply_recommendation_score = 0
+
         # Based on the parameters above lets calculate safety
         if _account_type == 'user': 
             safe_to_apply_recommendation_score = 30
@@ -91,5 +93,28 @@ class IAMRiskScoreModel:
                 'safe_to_apply_recommendation_score_factors': 3
             }
         )
+        
+        risk_score = 0
+        # Based on the parameters above lets calculate risk_profile
+        # Risk can be calculated as compound function ??
+        # (1+r)^n 
+        n = {
+            'user': 1,
+            'group': 2,
+            'serviceAccount': 3
+        }
+        r = _excess_permissions_percent
+        risk_score = (1+r)**n[_account_type] * 100
 
+        self._score.update(
+            {
+                'risk_score': round(risk_score),
+                'risk_score_factors': 2
+            }
+        )
+        self._score.update(
+            {
+                'over_privilege_score': round(_excess_permissions_percent*100)
+            }
+        )
         return self._score

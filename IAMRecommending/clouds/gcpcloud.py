@@ -44,7 +44,7 @@ class GCPCloudIAMRecommendations:
         # Scan needs to be done for list of projects or all the projects
         # projects='*' indicates all projects
         if self._projects == '*':
-            _log.info('Plugin started in Scan-All-Project-Mode')
+            _log.info('Plugin started in Scan-All-Projects-Mode')
             # Get the list of all the projects available
             self._projects = []
             cloudresourcemanager_service = util.build_resource(
@@ -56,8 +56,6 @@ class GCPCloudIAMRecommendations:
                 'projects'):
                 self._projects.append(project['projectId'])
 
-            # TODO This is for testing purpose. 
-            # self._projects = self._projects[-10:]
             _log.info('Projects %s', len(self._projects))
 
         # Service account key file also has the client email under the key
@@ -115,6 +113,17 @@ class GCPCloudIAMRecommendations:
                        type(e).__name__, e)
 
     def _get_recommendations(self, record_type, project_index, project, zone=None):
+        """Generate tuples of record as recommendation for a specific project.
+
+        The yielded tuples when unpacked would become arguments for processor workers
+
+        Yields:
+            tuple: A tuple which when unpacked forms valid arguments for
+                :meth:`_get_recommendations`.
+
+        """
+        _log.info('Fetching recommendations for project : %s ...', project)
+
         parent_string = 'projects/{project}/locations/{location}/recommenders/{recommenders}'.format(
             project=project,
             location='global',
@@ -151,8 +160,10 @@ class GCPCloudIAMRecommendations:
             )
 
             yield {
-                'GCPIAMRaw': recommendation
+                'raw': recommendation
             }
+
+        _log.info('Fetched recommendations for project : %s', project)
 
     def done(self):
         """Log a message that this plugin is done."""
