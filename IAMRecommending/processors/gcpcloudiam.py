@@ -143,7 +143,8 @@ class GCPIAMRecommendationProcessor:
                         )
                     )
                     _actor_total_permissions = _content.get(
-                        'currentTotalPermissionsCount'
+                        'currentTotalPermissionsCount',
+                        '0'
                     )
                     _actor_exercised_permissions_category = insights[0].get(
                         'category',
@@ -152,7 +153,7 @@ class GCPIAMRecommendationProcessor:
 
             recommendation_dict.update(
                 {
-                    'account_total_permissions': _actor_total_permissions,
+                    'account_total_permissions': int(_actor_total_permissions),
                     'account_used_permissions': _actor_exercised_permissions,
                     'account_permission_insights_category': _actor_exercised_permissions_category
                 }

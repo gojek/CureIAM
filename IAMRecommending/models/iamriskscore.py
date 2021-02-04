@@ -62,8 +62,7 @@ class IAMRiskScoreModel:
         _account_type = self._record['account_type']
         _suggestion_type = self._record['account_permission_insights_category']
         _used_permissions = int(self._record['account_used_permissions'])
-        _total_permissions = int(self._record['account_total_permissions']) \
-            if self._record['account_total_permissions'] is not None else 1
+        _total_permissions = int(self._record['account_total_permissions'] if self._record['account_total_permissions'] is not None else _used_permissions + 1)
 
         _excess_permissions = _total_permissions - _used_permissions
         _excess_permissions_percent = _excess_permissions / _total_permissions
@@ -99,12 +98,12 @@ class IAMRiskScoreModel:
         # Risk can be calculated as compound function ??
         # (1+r)^n 
         n = {
-            'user': 1,
-            'group': 2,
-            'serviceAccount': 3
+            'user': 2,
+            'group': 3,
+            'serviceAccount': 5
         }
-        r = _excess_permissions_percent
-        risk_score = (1+r)**n[_account_type] * 100
+        r = _excess_permissions / _total_permissions
+        risk_score = r**n[_account_type] * 100
 
         self._score.update(
             {
@@ -114,7 +113,7 @@ class IAMRiskScoreModel:
         )
         self._score.update(
             {
-                'over_privilege_score': round(_excess_permissions_percent*100)
+                'over_privilege_score': round(_excess_permissions_percent * 100)
             }
         )
         return self._score
