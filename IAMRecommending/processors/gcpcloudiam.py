@@ -5,6 +5,7 @@ import json
 import logging
 
 from IAMRecommending.models.iamriskscore import IAMRiskScoreModel
+from IAMRecommending.models.applyrecommendationmodel import IAMApplyRecommendationModel
 
 _log = logging.getLogger(__name__)
 
@@ -159,14 +160,20 @@ class GCPIAMRecommendationProcessor:
                 }
             )   
 
-            # Get the list of all permissions which are
-            # in REMOVE recommendation
-
-            yield { 
+            _res =  { 
                 'raw': iam_raw_record,
                 'processor':  recommendation_dict ,
-                'score': IAMRiskScoreModel(recommendation_dict).score()
+                'score': IAMRiskScoreModel(recommendation_dict).score(),
+                'apply_recommendation': IAMApplyRecommendationModel(recommendation_dict).model()
             }
+
+            _res['apply_recommendation'].update(
+                {
+                    'safe_to_apply_score': _res['score']['safe_to_apply_recommendation_score']
+                }
+            )
+
+            yield _res
             
     def done(self):
         """Perform cleanup work.

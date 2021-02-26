@@ -56,8 +56,8 @@ class GCPCloudIAMRecommendations:
                 'projects'):
                 self._projects.append(project['projectId'])
 
-            _log.info('Projects %s', len(self._projects))
-
+        _log.info('Projects %s', len(self._projects))
+        
         # Service account key file also has the client email under the key
         # client_email. We will use this key file to get the client email for
         # this request.

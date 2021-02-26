@@ -71,11 +71,11 @@ class IAMRiskScoreModel:
 
         # Based on the parameters above lets calculate safety
         if _account_type == 'user': 
-            safe_to_apply_recommendation_score = 30
+            safe_to_apply_recommendation_score = 60
         elif _account_type == 'group':
-            safe_to_apply_recommendation_score = 20
+            safe_to_apply_recommendation_score = 30
         else:
-            safe_to_apply_recommendation_score = 10
+            safe_to_apply_recommendation_score = 0
         
         if _suggestion_type == 'REMOVE_ROLE':
             safe_to_apply_recommendation_score += 30

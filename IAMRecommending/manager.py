@@ -15,6 +15,7 @@ import logging.config
 import multiprocessing as mp
 import textwrap
 import time
+import json
 
 import schedule
 
@@ -124,6 +125,7 @@ class Audit:
         self._audit_key = audit_key
         self._audit_version = audit_version
         self._config = config
+        self._audit_config = config['audits'][audit_key]
         audit_config = config['audits'][audit_key]
 
         # We keep all workers in these lists.
@@ -257,6 +259,13 @@ class Audit:
         end_time = time.localtime()
         _send_email(self._config.get('email'), self._audit_key,
                     self._start_time, end_time)
+        
+        # If Audit results has to be enforced, check if in the 
+        # current audit confi the applyRecommendations is set
+        # to true
+        if self._audit_config.get('applyRecommendations', False):
+            _log.info('Apply recommendations gracefully ...')
+
 
 
 def _send_email(email_config, about, start_time, end_time=None):
