@@ -36,7 +36,6 @@ class GCPCloudIAMRecommendations:
         self._processes = processes
         self._threads = threads
         
-
         # Create credentials for python client from service account key file
         credentials = service_account.Credentials.from_service_account_file(
             self._key_file_path, scopes=_GCP_SCOPES)
@@ -168,3 +167,4 @@ class GCPCloudIAMRecommendations:
     def done(self):
         """Log a message that this plugin is done."""
         _log.info('GCP IAM Audit done')
+ 

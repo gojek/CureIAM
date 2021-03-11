@@ -3,9 +3,12 @@
 
 import json
 import logging
+import datetime
 
 from IAMRecommending.models.iamriskscore import IAMRiskScoreModel
 from IAMRecommending.models.applyrecommendationmodel import IAMApplyRecommendationModel
+
+from IAMRecommending import util
 
 _log = logging.getLogger(__name__)
 
@@ -13,10 +16,33 @@ class GCPIAMRecommendationProcessor:
     """SimpleProcessor plugin to perform processing on 
         gcpcloud.IAMRecommending IAMRecommendation_record."""
 
-    def __init__(self):
+    def __init__(self, enforcer=None):
         """Create an instance of :class:`GCPIAMRecommendationProcessor` plugin.
         """
-        pass
+        self._enforcer = enforcer
+
+        if self._enforcer:
+            self._apply_recommendation_allowlist_projects = enforcer.get('allowlist_projects', None)
+            self._apply_recommendation_blocklist_projects = enforcer.get('blocklist_projects', None)
+
+            self._apply_recommendation_allowlist_accounts = enforcer.get('allowlist_accounts', None)
+            self._apply_recommendation_blocklist_accounts = enforcer.get('blocklist_accounts', None)
+
+            self._apply_recommendation_allowlist_account_types = enforcer.get('allowlist_account_types', ['user', 'group'])
+            self._apply_recommendation_blocklist_account_types = enforcer.get('blocklist_account_types', ['serviceAccount'])
+
+            # Min recommendation apply score is 60 to default.
+            self._apply_recommendation_min_score = enforcer.get('min_safe_to_apply_score', 60)
+
+            self._apply_recommendations_svc_acc_key_file = enforcer.get('key_file_path', None)
+            self._cloud_resource = util.build_resource(
+                service_name='cloudresourcemanager',
+                key_file_path=self._apply_recommendations_svc_acc_key_file
+            )
+            self._recommender_resource = util.build_resource(
+                service_name='recommender',
+                key_file_path=self._apply_recommendations_svc_acc_key_file
+            )
 
     def eval(self, record):
         """Function to perform data processing.
@@ -173,7 +199,184 @@ class GCPIAMRecommendationProcessor:
                 }
             )
 
+            # enforce the recommendation before saving it in DB.
+            if self._enforcer:
+                _log.info('Applying recommendation %s ...', recommendation_dict['recommendation_id'])
+                _recomemndation_applied = self._enforce_recommendation(_res)
+                if _recomemndation_applied:
+                    _res['apply_recommendation'].update(
+                        {
+                            'recommendation_state': 'Applied',
+                            'recommendation_applied_time': str(datetime.datetime.utcnow().isoformat())
+                        }
+                    )
+                    _log.info('Applied Recommendation %s', recommendation_dict['recommendation_id'])
+                
+                else:
+                    _log.warn('Recommendation %s not applied', recommendation_dict['recommendation_id'])
+            
             yield _res
+            
+
+    def _enforce_recommendation(self, record):
+        """Method to perform Recommendation enforcement
+        
+        IAM recommendation doesn't have API to apply the recommendation
+        directly rather we will have to create IAM resource which will
+        perform the policy enforcement. This method does the same.
+
+        Arguments:
+            record(dict): dict record contaning raw + processor record
+
+        Returns:
+            bool: Indicating if the we were able to successfully apply
+            recommendation or not.
+        """
+
+        """
+        Flow:
+        Apply IAM policy from recommender
+            - success
+                - mark recommendation as succeeded
+                - return True
+            - no
+                - dont change the recommendation status
+                - return False
+        """
+        cloud_resource = self._cloud_resource
+        recommender_resource = self._recommender_resource
+
+        _processor_record = record.get('processor', None)
+        _score_record = record.get('score', None)
+
+        if _processor_record and _score_record:
+            _project = _processor_record.get('project', None)
+            _recommendation_actions = _processor_record.get('recommendation_actions', None)
+            _recommendation_id = _processor_record.get('recommendation_id', None)
+            _account_id = _processor_record.get('account_id')
+            _account_type = _processor_record.get('account_type')
+            _safety_score = _score_record.get('safe_to_apply_recommendation_score', None)
+
+            _we_want_to_apply_recommendation = False
+            _log.info('Testing recommendation for project %s; account %s; safety_score %d',
+                    _project,
+                    _account_id,
+                    _safety_score)
+    
+            if (
+                (
+                    self._apply_recommendation_allowlist_projects is None
+                    or (_project not in self._apply_recommendation_blocklist_projects 
+                    and _project in self._apply_recommendation_allowlist_projects)
+                ) 
+            and 
+                (
+                    _account_type not in self._apply_recommendation_blocklist_account_types
+                    and _account_type in self._apply_recommendation_allowlist_account_types
+                ) 
+            and 
+                (
+                    self._apply_recommendation_allowlist_accounts is None
+                    or (_account_id not in self._apply_recommendation_blocklist_accounts
+                    and _account_id in self._apply_recommendation_allowlist_accounts)
+                )
+            and _safety_score >= self._apply_recommendation_min_score
+            ):
+                _we_want_to_apply_recommendation = True
+
+
+            if _we_want_to_apply_recommendation:
+                _log.info('Applying recommendation for project %s; account %s; safety_score %d',
+                          _project,
+                          _account_id,
+                          _safety_score)
+                
+                _policies = (
+                    cloud_resource.projects()
+                    .getIamPolicy(
+                        resource=_project,
+                        body={"options": {"requestedPolicyVersion": "1"}}
+                    ).execute()
+                )
+                _updated_policies = _policies
+
+                for _recommendation_action in _recommendation_actions:
+                    if _recommendation_action.get('action') == 'remove':
+                        member = (
+                            _recommendation_action.get('pathFilters')
+                            .get('/iamPolicy/bindings/*/members/*')
+                        )
+                        role = (
+                            _recommendation_action.get('pathFilters')
+                            .get('/iamPolicy/bindings/*/role')
+                        )
+                        _updated_policies = self.modify_policy_remove_member(
+                            _updated_policies,
+                            role,
+                            member
+                        )
+                        
+                    elif _recommendation_action.get('action') == 'add':
+                        member = _recommendation_action.get('value')
+                        role = (
+                            _recommendation_action.get('pathFilters')
+                            .get('/iamPolicy/bindings/*/role')
+                        )
+                        _updated_policies = self.modify_policy_add_member(
+                            _updated_policies,
+                            role,
+                            member
+                        )
+                        
+
+                #Apply the policies present in recommendations
+                policy = (
+                    cloud_resource.projects()
+                    .setIamPolicy(resource=_project, body={'policy': _updated_policies})
+                    .execute()
+                )
+                # print(policy)
+
+                # Update the recommendation status.
+                _status = (
+                    recommender_resource
+                    .projects()
+                    .locations()
+                    .recommenders()
+                    .recommendations()
+                    .markSucceeded(
+                        body={
+                            'etag': record.get('raw').get('etag'),
+                            'stateMetadata': {
+                                'reviewed-by': 'iam-recommending-engine',
+                                'owned-by': 'prod-sec'
+                            }
+                        },
+                        name=_recommendation_id)
+                    .execute()
+                )
+                # So we have applied recommendation and we are good.
+                return True
+        
+        return False
+
+    def modify_policy_remove_member(self, policy, role, member):
+        """Removes a  member from a role binding."""
+        try:
+            binding = next(b for b in policy["bindings"] if b["role"] == role)
+            if "members" in binding and member in binding["members"]:
+                binding["members"].remove(member)
+        except StopIteration:
+            # Policy removed in previous iterations
+            pass
+        return policy
+    
+
+    def modify_policy_add_member(self, policy, role, member):
+        """Adds a new role binding to a policy."""
+        binding = {"role": role, "members": [member]}
+        policy["bindings"].append(binding)
+        return policy
             
     def done(self):
         """Perform cleanup work.

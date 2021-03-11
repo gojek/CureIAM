@@ -232,20 +232,20 @@ class Audit:
         for w in self._cloud_workers:
             w.join()
 
-        # Stop store workers.
-        for q in self._store_queues:
-            q.put(None)
-
         # Stop processor workers.
         for q in self._processor_queues:
             q.put(None)
 
-        # Wait for store workers to terminate.
-        for w in self._store_workers:
-            w.join()
-
         # Wait for processor workers to terminate.
         for w in self._processor_workers:
+            w.join()
+
+        # Stop store workers.
+        for q in self._store_queues:
+            q.put(None)
+
+        # Wait for store workers to terminate.
+        for w in self._store_workers:
             w.join()
 
         # Stop alert workers.
