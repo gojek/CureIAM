@@ -210,6 +210,12 @@ class GCPIAMRecommendationProcessor:
                             'recommendation_applied_time': str(datetime.datetime.utcnow().isoformat())
                         }
                     )
+                    _res['score'].update(
+                        {
+                            'risk_score': 0,
+                            'over_privilege_score': 0
+                        }
+                    )
                     _log.info('Applied Recommendation %s', recommendation_dict['recommendation_id'])
                 
                 else:
