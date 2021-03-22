@@ -19,6 +19,9 @@ class GCPIAMRecommendationProcessor:
     def __init__(self, enforcer=None):
         """Create an instance of :class:`GCPIAMRecommendationProcessor` plugin.
         """
+        self._recommendation_applied = 0
+        self._recommendation_applied_today = 0
+
         self._enforcer = enforcer
 
         if self._enforcer:
@@ -199,11 +202,27 @@ class GCPIAMRecommendationProcessor:
                 }
             )
 
+            # If recommendation was applied in past
+            # update the risk score and safe_to_apply_
+            # _score to 0
+            if _res['raw']['stateInfo']['state']=='SUCCEEDED':
+                _res['score'].update(
+                        {
+                            'risk_score': 0,
+                            'over_privilege_score': 0
+                        }
+                    )
+                
+                self._recommendation_applied += 1
+                _log.info('Recommendation %s applied in past, setting score to 0', recommendation_dict['recommendation_id'])
+            
             # enforce the recommendation before saving it in DB.
-            if self._enforcer:
+            # Also dont re-apply the recommendation is it is already applied
+            if self._enforcer and _res['raw']['stateInfo']['state']=='ACTIVE':
                 _log.info('Applying recommendation %s ...', recommendation_dict['recommendation_id'])
                 _recomemndation_applied = self._enforce_recommendation(_res)
                 if _recomemndation_applied:
+                    _res['raw']['stateInfo']['state'] = 'SUCCEEDED'
                     _res['apply_recommendation'].update(
                         {
                             'recommendation_state': 'Applied',
@@ -216,6 +235,7 @@ class GCPIAMRecommendationProcessor:
                             'over_privilege_score': 0
                         }
                     )
+                    self._recommendation_applied_today += 1
                     _log.info('Applied Recommendation %s', recommendation_dict['recommendation_id'])
                 
                 else:
@@ -390,3 +410,5 @@ class GCPIAMRecommendationProcessor:
         a typical event plugin may or may not need to perform cleanup
         work in this method depending on its nature of work.
         """
+        _log.info('Recommendation applied: %s; Recommendations applied today: %s',
+                  self._recommendation_applied, self._recommendation_applied_today)
