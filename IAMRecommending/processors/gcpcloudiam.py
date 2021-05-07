@@ -219,7 +219,7 @@ class GCPIAMRecommendationProcessor:
             # enforce the recommendation before saving it in DB.
             # Also dont re-apply the recommendation is it is already applied
             if self._enforcer and _res['raw']['stateInfo']['state']=='ACTIVE':
-                _log.info('Applying recommendation %s ...', recommendation_dict['recommendation_id'])
+                _log.info('Enforcing recommendation %s ...', recommendation_dict['recommendation_id'])
                 _recomemndation_applied = self._enforce_recommendation(_res)
                 if _recomemndation_applied:
                     _res['raw']['stateInfo']['state'] = 'SUCCEEDED'
@@ -308,15 +308,23 @@ class GCPIAMRecommendationProcessor:
                 )
             and _safety_score >= self._apply_recommendation_min_score
             ):
-                _we_want_to_apply_recommendation = True
+                # If Recommendation is for SA, apply only for 'REMOVE_ROLE'
+                if (
+                    _account_type == 'serviceAccount'
+                    and _processor_record.get('recommendetion_recommender_subtype') == 'REMOVE_ROLE'
+                ):
+                    _we_want_to_apply_recommendation = True
 
 
             if _we_want_to_apply_recommendation:
-                _log.info('Applying recommendation for project %s; account %s; safety_score %d',
+                _log.info('Applying recommendation for project %s; account %s; account_type %s ; safety_score %d',
                           _project,
                           _account_id,
+                          _account_type,
                           _safety_score)
                 
+            
+            
                 _policies = (
                     cloud_resource.projects()
                     .getIamPolicy(
