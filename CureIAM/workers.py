@@ -4,7 +4,7 @@
 
 import logging
 
-from IAMRecommending import util
+from CureIAM import util
 
 _log = logging.getLogger(__name__)
 
@@ -158,7 +158,7 @@ def alert_worker(audit_key, audit_version, plugin_key, plugin_config,
                  input_queue):
     """Worker function for alert plugins.
 
-    This function behaves like :func:`IAMRecommending.workers.store_worker`.
+    This function behaves like :func:`CureIAM.workers.store_worker`.
     See its documentation for details.
 
     Arguments:

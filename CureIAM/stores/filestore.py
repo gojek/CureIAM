@@ -9,7 +9,7 @@ import os.path
 class FileStore:
     """A plugin to store records on the filesystem."""
 
-    def __init__(self, path='/tmp/IAMRecommending'):
+    def __init__(self, path='/tmp/CureIAM'):
         """Create an instance of :class:`FileStore` plugin.
 
         Arguments:

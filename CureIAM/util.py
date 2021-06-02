@@ -15,8 +15,8 @@ import yaml
 from google.oauth2 import service_account
 from googleapiclient import discovery
 
-import IAMRecommending
-from IAMRecommending import baseconfig
+import CureIAM
+from CureIAM import baseconfig
 
 _log = logging.getLogger(__name__)
 
@@ -67,9 +67,9 @@ def load_plugin(plugin_config):
     Example:
         Here is an example usage of this function:
 
-        >>> from IAMRecommending import util
+        >>> from CureIAM import util
         >>> plugin_config = {
-        ...     'plugin': 'IAMRecommending.clouds.mockcloud.MockCloud',
+        ...     'plugin': 'CureIAM.clouds.mockcloud.MockCloud',
         ...     'params': {
         ...         'record_count': 4,
         ...         'record_types': ('baz', 'qux')
@@ -78,7 +78,7 @@ def load_plugin(plugin_config):
         ...
         >>> plugin = util.load_plugin(plugin_config)
         >>> print(type(plugin))
-        <class 'IAMRecommending.clouds.mockcloud.MockCloud'>
+        <class 'CureIAM.clouds.mockcloud.MockCloud'>
         >>> for record in plugin.read():
         ...     print(record['raw']['data'],
         ...           record['ext']['record_type'],
@@ -132,10 +132,10 @@ def parse_cli(args=None):
 
     """
     default_config_paths = [
-        '/etc/IAMRecommending.yaml',
-        '~/.IAMRecommending.yaml',
-        '~/IAMRecommending.yaml',
-        'IAMRecommending.yaml',
+        '/etc/CureIAM.yaml',
+        '~/.CureIAM.yaml',
+        '~/CureIAM.yaml',
+        'CureIAM.yaml',
     ]
 
     description = """
@@ -167,7 +167,7 @@ def parse_cli(args=None):
     # breaks are lost, and the usage description looks ugly.
     formatter = argparse.RawDescriptionHelpFormatter
 
-    parser = argparse.ArgumentParser(prog='IAMRecommending',
+    parser = argparse.ArgumentParser(prog='CureIAM',
                                      description=description,
                                      formatter_class=formatter)
 
@@ -182,7 +182,7 @@ def parse_cli(args=None):
                         help='print base configuration')
 
     parser.add_argument('-v', '--version', action='version',
-                        version='%(prog)s ' + IAMRecommending.__version__)
+                        version='%(prog)s ' + CureIAM.__version__)
 
     args = parser.parse_args(args)
     return args
@@ -242,7 +242,7 @@ def merge_dicts(*dicts):
     Example:
         Here is an example usage of this function:
 
-        >>> from IAMRecommending import util
+        >>> from CureIAM import util
         >>> a = {'a': 'apple', 'b': 'ball'}
         >>> b = {'b': 'bat', 'c': 'cat'}
         >>> c = util.merge_dicts(a, b)
@@ -269,7 +269,7 @@ def expand_port_ranges(port_ranges):
     Examples:
         Here is an example usage of this function:
 
-        >>> from IAMRecommending import util
+        >>> from CureIAM import util
         >>> ports = util.expand_port_ranges(['22', '3389', '8080-8085'])
         >>> print(ports == {22, 3389, 8080, 8081, 8082, 8083, 8084, 8085})
         True
@@ -348,7 +348,7 @@ def friendly_string(technical_string):
     Examples:
         Here are a few example usages of this function:
 
-        >>> from IAMRecommending import util
+        >>> from CureIAM import util
         >>> util.friendly_string('azure')
         'Azure'
         >>> util.friendly_string('gcp')
@@ -377,7 +377,7 @@ def friendly_list(items, conjunction='and'):
     Examples:
         Here are a few example usages of this function:
 
-        >>> from IAMRecommending import util
+        >>> from CureIAM import util
         >>> util.friendly_list([])
         'none'
         >>> util.friendly_list(['apple'])
@@ -422,7 +422,7 @@ def pluralize(count, word, *suffixes):
         In the simplest form usage, this function just adds an ``'s'``
         to the input word when the plural form needs to be used.
 
-        >>> from IAMRecommending import util
+        >>> from CureIAM import util
         >>> util.pluralize(0, 'apple')
         'apples'
         >>> util.pluralize(1, 'apple')

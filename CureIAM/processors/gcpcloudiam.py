@@ -1,20 +1,20 @@
-"""Plugin to process the data retrieved from `gcpcloud.IAMRecommending` plugin
+"""Plugin to process the data retrieved from `gcpcloud.CureIAM` plugin
 """
 
 import json
 import logging
 import datetime
 
-from IAMRecommending.models.iamriskscore import IAMRiskScoreModel
-from IAMRecommending.models.applyrecommendationmodel import IAMApplyRecommendationModel
+from CureIAM.models.iamriskscore import IAMRiskScoreModel
+from CureIAM.models.applyrecommendationmodel import IAMApplyRecommendationModel
 
-from IAMRecommending import util
+from CureIAM import util
 
 _log = logging.getLogger(__name__)
 
 class GCPIAMRecommendationProcessor:
     """SimpleProcessor plugin to perform processing on 
-        gcpcloud.IAMRecommending IAMRecommendation_record."""
+        gcpcloud.CureIAM IAMRecommendation_record."""
 
     def __init__(self, enforcer=None):
         """Create an instance of :class:`GCPIAMRecommendationProcessor` plugin.
@@ -115,7 +115,7 @@ class GCPIAMRecommendationProcessor:
                     }
                 }
         """
-        # Extract the different `IAMRecommending_record.recommendation_action.value`
+        # Extract the different `CureIAM_record.recommendation_action.value`
         # from the gcpcloud.GCPCloudIAMRecommendations
 
         iam_raw_record = record.get('raw', {})
@@ -382,8 +382,8 @@ class GCPIAMRecommendationProcessor:
                         body={
                             'etag': record.get('raw').get('etag'),
                             'stateMetadata': {
-                                'reviewed-by': 'iam-recommending-engine',
-                                'owned-by': 'prod-sec'
+                                'reviewed-by': 'CureIAM',
+                                'owned-by': 'Security'
                             }
                         },
                         name=_recommendation_id)

@@ -1,6 +1,6 @@
 venv: FORCE
-	python3 -m venv ~/.venv/IAMRecommending
-	echo . ~/.venv/IAMRecommending/bin/activate > venv
+	python3 -m venv ~/.venv/CureIAM
+	echo . ~/.venv/CureIAM/bin/activate > venv
 
 # In local development environment, we run `make venv` to create a
 # `venv` script that can be used to activate the virtual Python
@@ -23,7 +23,7 @@ deps: FORCE
 	. ./venv && pip3 install -r dev-requirements.txt
 
 rmvenv: FORCE
-	rm -rf ~/.venv/IAMRecommending
+	rm -rf ~/.venv/CureIAM
 	rm venv
 
 test: FORCE
@@ -59,6 +59,6 @@ freeze: rmuservenv uservenv
 clean: FORCE
 	find . -name "__pycache__" -exec rm -r {} +
 	find . -name "*.pyc" -exec rm {} +
-	rm -rf .coverage.* .coverage htmlcov build IAMRecommending.egg-info dist
+	rm -rf .coverage.* .coverage htmlcov build CureIAM.egg-info dist
 
 FORCE:

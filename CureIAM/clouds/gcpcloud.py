@@ -6,7 +6,7 @@ import logging
 
 from google.oauth2 import service_account
 
-from IAMRecommending import ioworkers, util
+from CureIAM import ioworkers, util
 
 
 """OAuth 2.0 scopes for Google APIs required by this plugin.

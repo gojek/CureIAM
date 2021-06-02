@@ -28,7 +28,7 @@ class IAMApplyRecommendationModel:
         }
 
         # There should be three different types of recommendation state
-        # applied by IAMRecommending/Claimed/Will not be applied
+        # applied by CureIAM/Claimed/Will not be applied
 
 
     def model(self):

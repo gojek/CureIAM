@@ -1,5 +1,5 @@
 """Main script for the package."""
 
-from IAMRecommending import manager
+from CureIAM import manager
 
 manager.main()

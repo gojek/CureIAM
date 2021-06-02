@@ -19,8 +19,8 @@ import json
 
 import schedule
 
-import IAMRecommending
-from IAMRecommending import baseconfig, util, workers
+import CureIAM
+from CureIAM import baseconfig, util, workers
 
 # Define module-level logger.
 _log = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ def main():
     log_config['handlers'] = {'console': log_config['handlers']['console']}
     log_config['root']['handlers'] = ['console']
     logging.config.dictConfig(log_config)
-    _log.info('IAMRecommending %s', IAMRecommending.__version__)
+    _log.info('CureIAM %s', CureIAM.__version__)
 
     # Parse the command line arguments and handle the options that can
     # be handled immediately.
@@ -50,7 +50,7 @@ def main():
     # Then configure the logger once again to honour any logger
     # configuration defined in the user's configuration files.
     logging.config.dictConfig(config['logger'])
-    _log.info('IAMRecommending %s; configured', IAMRecommending.__version__)
+    _log.info('CureIAM %s; configured', CureIAM.__version__)
 
     # Finally, run the audits, either right now or as per a schedule,
     # depending on the command line options.

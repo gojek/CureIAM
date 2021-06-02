@@ -2,29 +2,29 @@
 
 import setuptools
 
-import IAMRecommending
+import CureIAM
 
-_description = IAMRecommending.__doc__.splitlines()[0]
+_description = CureIAM.__doc__.splitlines()[0]
 _long_description = open('README.md').read()
-_version = IAMRecommending.__version__
+_version = CureIAM.__version__
 _requires = open('pkg-requirements.txt').read().splitlines()
 
 setuptools.setup(
 
-    name='IAMRecommending',
+    name='CureIAM',
     version=_version,
-    author='IAMRecommending Authors and Contributors',
+    author='CureIAM Authors and Contributors',
     description=_description,
     long_description=_long_description,
-    url='https://github.com/IAMRecommending/IAMRecommending',
+    url='https://github.com/CureIAM/CureIAM',
 
     install_requires=_requires,
 
-    packages=setuptools.find_packages(exclude=['IAMRecommending.test']),
+    packages=setuptools.find_packages(exclude=['CureIAM.test']),
 
     entry_points={
         'console_scripts': {
-            'IAMRecommending = IAMRecommending.manager:main'
+            'CureIAM = CureIAM.manager:main'
         }
     },
 

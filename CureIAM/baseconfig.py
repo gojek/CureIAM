@@ -41,7 +41,7 @@ logger:
     file:
       class: logging.handlers.TimedRotatingFileHandler
       formatter: simple
-      filename: /tmp/IAMRecommending.log
+      filename: /tmp/CureIAM.log
       when: midnight
       encoding: utf8
       backupCount: 5
