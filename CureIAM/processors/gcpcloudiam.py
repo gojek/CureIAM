@@ -16,26 +16,32 @@ class GCPIAMRecommendationProcessor:
     """SimpleProcessor plugin to perform processing on 
         gcpcloud.CureIAM IAMRecommendation_record."""
 
-    def __init__(self, enforcer=None):
+    def __init__(self, enable_enforcer=False, enforcer=None):
         """Create an instance of :class:`GCPIAMRecommendationProcessor` plugin.
         """
         self._recommendation_applied = 0
         self._recommendation_applied_today = 0
 
         self._enforcer = enforcer
+        self._enable_enforcer = enable_enforcer
 
         if self._enforcer:
             self._apply_recommendation_allowlist_projects = enforcer.get('allowlist_projects', None)
+            # Don't perform operations on these projects
             self._apply_recommendation_blocklist_projects = enforcer.get('blocklist_projects', None)
 
-            self._apply_recommendation_allowlist_accounts = enforcer.get('allowlist_accounts', None)
+            # Don't perform operations on these accounts_ids
             self._apply_recommendation_blocklist_accounts = enforcer.get('blocklist_accounts', None)
 
             self._apply_recommendation_allowlist_account_types = enforcer.get('allowlist_account_types', ['user', 'group'])
             self._apply_recommendation_blocklist_account_types = enforcer.get('blocklist_account_types', ['serviceAccount'])
 
-            # Min recommendation apply score is 60 to default.
-            self._apply_recommendation_min_score = enforcer.get('min_safe_to_apply_score', 60)
+            # Min recommendation apply score is 60 to default for user
+            self._apply_recommendation_min_score_user = enforcer.get('min_safe_to_apply_score_user', 60)
+            # Min recommendation apply score is 60 to default for groups
+            self._apply_recommendation_min_score_group = enforcer.get('min_safe_to_apply_score_group', 60)
+            # Min recommendation apply score is 60 to default for SA
+            self._apply_recommendation_min_score_SA = enforcer.get('min_safe_to_apply_score_SA', 60)
 
             self._apply_recommendations_svc_acc_key_file = enforcer.get('key_file_path', None)
             self._cloud_resource = util.build_resource(
@@ -82,7 +88,7 @@ class GCPIAMRecommendationProcessor:
                                         "path": "/iamPolicy/bindings/*/members/*",
                                         "pathFilters": {
                                         "/iamPolicy/bindings/*/condition/expression": "",
-                                        "/iamPolicy/bindings/*/members/*": "user:kenny.g@go-jek.com",
+                                        "/iamPolicy/bindings/*/members/*": "user:<user-name>@<doamin.com>",
                                         "/iamPolicy/bindings/*/role": "roles/storage.objectAdmin"
                                         }
                                     }
@@ -269,6 +275,9 @@ class GCPIAMRecommendationProcessor:
                 - dont change the recommendation status
                 - return False
         """
+        if not self._enable_enforcer :
+            return
+        
         cloud_resource = self._cloud_resource
         recommender_resource = self._recommender_resource
 
@@ -302,11 +311,8 @@ class GCPIAMRecommendationProcessor:
                 ) 
             and 
                 (
-                    self._apply_recommendation_allowlist_accounts is None
-                    or (_account_id not in self._apply_recommendation_blocklist_accounts
-                    and _account_id in self._apply_recommendation_allowlist_accounts)
+                    _account_id not in self._apply_recommendation_blocklist_accounts
                 )
-            and _safety_score >= self._apply_recommendation_min_score
             ):
                 # If Recommendation is for SA, apply only for 'REMOVE_ROLE'
                 if (
@@ -316,14 +322,19 @@ class GCPIAMRecommendationProcessor:
                     _we_want_to_apply_recommendation = True
 
 
+            if _account_id == 'user' and _safety_score < self._apply_recommendation_min_score_user:
+                _we_want_to_apply_recommendation = False
+            elif _account_id == 'group' and _safety_score < self._apply_recommendation_min_score_group:
+                _we_want_to_apply_recommendation = False
+            elif _account_id == 'SA' and _safety_score < self._apply_recommendation_min_score_SA:
+                _we_want_to_apply_recommendation = False
+
             if _we_want_to_apply_recommendation:
                 _log.info('Applying recommendation for project %s; account %s; account_type %s ; safety_score %d',
                           _project,
                           _account_id,
                           _account_type,
                           _safety_score)
-                
-            
             
                 _policies = (
                     cloud_resource.projects()
@@ -382,8 +393,8 @@ class GCPIAMRecommendationProcessor:
                         body={
                             'etag': record.get('raw').get('etag'),
                             'stateMetadata': {
-                                'reviewed-by': 'CureIAM',
-                                'owned-by': 'Security'
+                                'reviewed-by': 'cureiam',
+                                'owned-by': 'security'
                             }
                         },
                         name=_recommendation_id)
