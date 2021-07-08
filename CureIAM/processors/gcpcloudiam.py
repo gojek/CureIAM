@@ -320,6 +320,10 @@ class GCPIAMRecommendationProcessor:
                     and _processor_record.get('recommendetion_recommender_subtype') == 'REMOVE_ROLE'
                 ):
                     _we_want_to_apply_recommendation = True
+                
+                else:
+                    if _account_type != 'serviceAccount': 
+                        _we_want_to_apply_recommendation = True
 
 
             if _account_id == 'user' and _safety_score < self._apply_recommendation_min_score_user:

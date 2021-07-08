@@ -1,6 +1,8 @@
 FROM python:3.7.11-alpine3.14
 
-RUN mkdir -p /usr/app/cureiam
+# For seting up the timezone
+ENV TZ=Asia/Kolkata
+RUN apk update && apk add tzdata
 
 # Create user
 ENV USER=cureiam
@@ -11,14 +13,12 @@ RUN addgroup cureiam
 RUN adduser \
     --disabled-password \
     --gecos "" \
-    --home "$(pwd)" \
     --ingroup "$USER" \
-    --no-create-home \
     --uid "$UID" \
     "$USER"
 
 # Change workdir
-WORKDIR /usr/app/cureiam
+WORKDIR /home/cureiam
 
 # Copy the necessary files
 COPY CureIAM CureIAM
@@ -26,14 +26,13 @@ COPY requirements.txt requirements.txt
 COPY CureIAM.yaml CureIAM.yaml
 COPY cureiamSA.json cureiamSA.json
 
-# make cureiam user the owner of /usr/app/cureiam
-RUN chown -R cureiam:cureiam /usr/app/cureiam
-
-# Install deps
-RUN pip install -r requirements.txt
 
 # Set user
 USER cureiam
+
+# Install deps
+RUN export PATH=$PATH:/home/cureiam/.local/bin
+RUN pip install -r requirements.txt --no-warn-script-location
 
 ENTRYPOINT ["python"]
 CMD ["-m", "CureIAM"]
