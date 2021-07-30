@@ -1,0 +1,87 @@
+# production file
+plugins:
+  gcpCloud:
+    plugin: CureIAM.clouds.gcpcloud.GCPCloudIAMRecommendations
+    params:
+      key_file_path: cureiamSA.json
+  filestore:
+    plugin: CureIAM.stores.filestore.FileStore
+  gcpIamProcessor:
+    plugin: CureIAM.processors.gcpcloudiam.GCPIAMRecommendationProcessor
+    params:
+      enable_enforcer: true
+      enforcer:
+        key_file_path: cureiamSA.json
+          - foo
+          - bar
+        blocklist_projects:
+          - None
+        blocklist_accounts:
+          - foo@bar.com
+        allowlist_account_types:
+          - user
+          - group
+          - serviceAccount
+        blocklist_account_types:
+          - None
+        min_safe_to_apply_score_user: 0
+        min_safe_to_apply_score_group: 0
+        min_safe_to_apply_score_SA: 50
+  esstore:
+    plugin: CureIAM.stores.esstore.EsStore
+    params:
+      host: es-host.com
+      port: 9200
+      index: cureiam-stg
+      username: security
+      password: secure-password
+
+audits:
+  IAMAudit:
+    clouds:
+      - gcpCloud
+    processors:
+      - gcpIamProcessor
+    stores:
+      - filestore
+      - esstore
+
+run:
+  - IAMAudit
+
+logger:
+  version: 1
+
+  disable_existing_loggers: false
+
+  formatters:
+    verysimple:
+      format: >-
+          [%(process)s]
+          %(name)s:%(lineno)d - %(message)s
+      datefmt: "%Y-%m-%d %H:%M:%S"
+
+  handlers:
+    rich_console:
+      class: rich.logging.RichHandler
+      formatter: verysimple
+
+    file:
+      class: logging.handlers.TimedRotatingFileHandler
+      formatter: simple
+      filename: /tmp/CureIAM.log
+      when: midnight
+      encoding: utf8
+      backupCount: 5
+
+  loggers:
+    adal-python:
+      level: INFO
+
+  root:
+    level: INFO
+    handlers:
+      - rich_console
+      - file
+
+schedule: "16:00"
