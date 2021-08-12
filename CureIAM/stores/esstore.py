@@ -14,11 +14,8 @@ class EsStore:
     """Elasticsearch adapter to index cloud data in Elasticsearch."""
 
     def __init__(self, host='localhost', port=9200, index='iam_recommending',
-<<<<<<< HEAD
                  username=None,
                  password=None,
-=======
->>>>>>> d826737... Change name from IAMRecommending to CureIAM :party:
                  buffer_size=5000000):
         """Create an instance of :class:`EsStore` plugin.
 
@@ -37,14 +34,10 @@ class EsStore:
                 in the in-memory buffer.
 
         """
-<<<<<<< HEAD
         if username and password:
             self._es = Elasticsearch([{'host': host, 'port': port}], http_auth=(username, password))
         else:
             self._es = Elasticsearch([{'host': host, 'port': port}])
-=======
-        self._es = Elasticsearch([{'host': host, 'port': port}])
->>>>>>> d826737... Change name from IAMRecommending to CureIAM :party:
         self._index = index
         self._buffer_size = buffer_size
         self._buffer = ''
@@ -84,10 +77,7 @@ class EsStore:
             # Handles exceptions of all types defined here.
             # https://github.com/elastic/elasticsearch-py/blob/master/elasticsearch/exceptions.py
             _log.error('Bulk Index Error: %s: %s', type(e).__name__, e)
-<<<<<<< HEAD
             print(self._buffer)
-=======
->>>>>>> d826737... Change name from IAMRecommending to CureIAM :party:
             return
 
         # Read and parse the response.
