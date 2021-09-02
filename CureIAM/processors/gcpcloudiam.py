@@ -314,16 +314,19 @@ class GCPIAMRecommendationProcessor:
                     _account_id not in self._apply_recommendation_blocklist_accounts
                 )
             ):
-                # If Recommendation is for SA, apply only for 'REMOVE_ROLE'
+                # If Recommendation is for SA, apply only for ['REMOVE_ROLE', 'REPLACE_ROLE']
                 if (
                     _account_type == 'serviceAccount'
-                    and _processor_record.get('recommendetion_recommender_subtype') == 'REMOVE_ROLE'
+                    and _processor_record.get('recommendetion_recommender_subtype') in ['REMOVE_ROLE', 'REPLACE_ROLE']
                 ):
                     _we_want_to_apply_recommendation = True
                 
                 else:
                     if _account_type != 'serviceAccount': 
-                        _we_want_to_apply_recommendation = True
+                        # If user is owner of any project dont apply recommendation
+                        # <TODO> this is very bad of detecting owners, need to find better way of doing this.
+                        if not 'owner' in str(record['raw']['content']['operationGroups']):
+                            _we_want_to_apply_recommendation = True
 
 
             if _account_id == 'user' and _safety_score < self._apply_recommendation_min_score_user:
