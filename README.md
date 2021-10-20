@@ -1,11 +1,10 @@
 <p align="center">
   <img width="300" height="300" src="./CureIAMLogo.png">
-  <br>
-  <img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/sec_r0?style=social">
-  <img alt="GitHub followers" src="https://img.shields.io/github/followers/r0hi7?style=social">
 </p>
 
+
 # CureIAM
+### Clean up of over permissioned IAM accounts on GCP infra in an automated way
 CureIAM is an easy-to-use, reliable, and performant engine for Least Privilege Principle Enforcement on GCP cloud infra. It enables DevOps and Security team to quickly clean up accounts in GCP infra that have granted permissions of more than what are required. CureIAM fetches the recommendations and insights from GCP IAM recommender, scores them and enforce those recommendations automatically on daily basic. It takes care of scheduling and all other aspects of running these enforcement jobs at scale. It is built on top of GCP IAM recommender APIs and [Cloudmarker](https://github.com/cloudmarker/cloudmarker) framework.
 
 
