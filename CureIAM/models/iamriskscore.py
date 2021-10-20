@@ -65,6 +65,11 @@ class IAMRiskScoreModel:
         _total_permissions = int(self._record['account_total_permissions'] if self._record['account_total_permissions'] is not None else _used_permissions + 1)
 
         _excess_permissions = _total_permissions - _used_permissions
+        # In case excess permissions are 0, make sure the excess permissions are set to 1, other wise this
+        # will throw error in production.
+        if _excess_permissions == 0 :
+            _excess_permissions = 1
+            
         _excess_permissions_percent = _excess_permissions / _total_permissions
 
         safe_to_apply_recommendation_score = 0
