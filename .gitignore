@@ -9,6 +9,7 @@ _build/
 *.yaml
 *.yml
 *.json
+.env
 
 # Ignore files generated due to releases.
 uservenv
@@ -24,3 +25,10 @@ IAMRecommending.yaml
 
 # Ignore Python cache files.
 *.pyc
+
+# Ignore any mac file
+*.DS_Store
+.DS_Store
+
+# Not ignoring dockerfle
+!elastic/docker_compose_es.yaml
