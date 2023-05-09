@@ -2,12 +2,12 @@
 """
 
 
-import logging
+from CureIAM.helpers import util
+from CureIAM.plugins import util_plugins
 
-from CureIAM import util
+from CureIAM.helpers import hlogging
 
-_log = logging.getLogger(__name__)
-
+_log = hlogging.get_logger(__name__)
 
 def cloud_worker(audit_key, audit_version, plugin_key, plugin_config,
                  output_queues):
@@ -32,7 +32,7 @@ def cloud_worker(audit_key, audit_version, plugin_key, plugin_config,
     _log.info('cloud_worker: %s: Started', worker_name)
 
     try:
-        plugin = util.load_plugin(plugin_config)
+        plugin = util_plugins.load(plugin_config)
         for record in plugin.read():
             record['com'] = util.merge_dicts(record.get('com', {}), {
                 'audit_key': audit_key,
@@ -88,7 +88,7 @@ def processor_worker(audit_key, audit_version, plugin_key, plugin_config,
     _log.info('processor_worker: %s: Started', worker_name)
 
     try:
-        plugin = util.load_plugin(plugin_config)
+        plugin = util_plugins.load(plugin_config)
     except Exception as e:
         _log.exception('processor_worker: %s: Failed; error: %s: %s',
                        worker_name, type(e).__name__, e)
@@ -190,7 +190,7 @@ def _write_worker(audit_key, audit_version, plugin_key, plugin_config,
     _log.info('%s_worker: %s: Started', worker_type, worker_name)
 
     try:
-        plugin = util.load_plugin(plugin_config)
+        plugin = util_plugins.load(plugin_config)
     except Exception as e:
         _log.exception('%s_worker: %s: Failed; error: %s: %s',
                        worker_type, worker_name, type(e).__name__, e)
