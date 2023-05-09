@@ -373,7 +373,7 @@ class GCPIAMRecommendationProcessor:
                           _account_type)
                 if self._mode_enforce:
                     _log.info('XXX# END of enforcing mode #XXX\n\n')            
-                    # _status = self._execute_recommendation(cloud_resource=cloud_resource, _project=_project)
+                    _status = self._execute_recommendation(cloud_resource=cloud_resource, _project=_project)
                 else:
                     _log.info('XXX# END of scan only mode #XXX\n\n')
                     return False
