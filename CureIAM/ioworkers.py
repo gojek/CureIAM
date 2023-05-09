@@ -1,14 +1,12 @@
 """Concurrent input/output workers implementation.
 """
 
-
-import logging
 import multiprocessing
 import os
 import threading
+from CureIAM.helpers import hlogging
 
-_log = logging.getLogger(__name__)
-
+_log = hlogging.get_logger(__name__)
 
 def run(input_func, output_func, processes=0, threads=0, log_tag=''):
     """Run concurrent input/output workers with specified functions.

@@ -1,9 +1,9 @@
-"""IAM Risk score model class implementation
+""" IAM Risk score model class implementation
 """
 
-import logging
+from CureIAM.helpers import hlogging
 
-_log = logging.getLogger(__name__)
+_log = hlogging.get_logger(__name__)
 
 class IAMApplyRecommendationModel:
     """IAMRiskScoreModel plugin for GCP IAM Recommendation records."""
