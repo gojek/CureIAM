@@ -55,6 +55,14 @@ logger:
     handlers:
       - rich_console
       - file
+  
+  child:
+    level: INFO
+    handlers: 
+      - rich_console
+    qualname: child
+    propagate: 0
+
 
 schedule: "00:00"
 """
