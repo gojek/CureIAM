@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 """Manager of worker subprocesses.
 
 This module invokes the worker subprocesses that perform the cloud
@@ -9,47 +8,54 @@ store, processor, or alert plugin and executes the plugin in a separate
 subprocess.
 """
 
+import multiprocessing as mp
 
 import copy
-import logging.config
-import multiprocessing as mp
 import textwrap
 import time
 import json
 
+#for scheduling
 import schedule
 
+# import pprint
+
+""" . = CureIAM which is the current module, for now it changes, to remove any depedency name incase if there is any changes folder name in the future
+"""
 import CureIAM
-from CureIAM import baseconfig, util, workers
+from CureIAM import baseconfig, workers
+from CureIAM.helpers import hconfigs, hemails, hcmd
+from CureIAM.helpers.hconfigs import Config
 
-# Define module-level logger.
-_log = logging.getLogger(__name__)
+from CureIAM.helpers import hlogging
+# from CureIAM.helpers.hlogging import Logger
 
+_log = hlogging.get_logger(__name__)
 
 def main():
     """Run the framework based on the schedule."""
     # Configure the logger as the first thing as per the base
     # configuration. We need this to be the first thing, so that
-    # we can see the messages logged by util.load_config().
-    log_config = copy.deepcopy(baseconfig.config_dict['logger'])
-    log_config['handlers'] = {'console': log_config['handlers']['console']}
-    log_config['root']['handlers'] = ['console']
-    logging.config.dictConfig(log_config)
-    _log.info('CureIAM %s', CureIAM.__version__)
 
     # Parse the command line arguments and handle the options that can
     # be handled immediately.
-    args = util.parse_cli()
+    args = hcmd.parse()
     if args.print_base_config:
         print(baseconfig.config_yaml.strip())
         return
 
     # Now load user's configuration files.
-    config = util.load_config(args.config)
+    # config = hconfigs.load(args.config)
+    
+    # print (config)
+
+    # set up the configuration 
+    config = Config.load(args.config)
+    # Logger.set_logger(Config.get_config_logger())
 
     # Then configure the logger once again to honour any logger
     # configuration defined in the user's configuration files.
-    logging.config.dictConfig(config['logger'])
+    # logging.config.dictConfig(config['logger'])
     _log.info('CureIAM %s; configured', CureIAM.__version__)
 
     # Finally, run the audits, either right now or as per a schedule,
@@ -282,10 +288,10 @@ def _send_email(email_config, about, start_time, end_time=None):
 
     """
     state = 'starting' if end_time is None else 'ending'
-    if email_config is None:
-        _log.info('Skipping email notification because email config is '
-                  'missing; about: %s; state: %s', about, state)
-        return
+    # if email_config is None:
+    #     _log.info('Skipping email notification because email config is '
+    #               'missing; about: %s; state: %s', about, state)
+    #     return
 
     _log.info('Sending email; about: %s; state: %s', about, state)
 
@@ -311,5 +317,7 @@ def _send_email(email_config, about, start_time, end_time=None):
 
         content = content + textwrap.dedent(end_content).lstrip()
 
-    util.send_email(content=content, **email_config)
+
+    # hemails.send(content=content, **email_config)
+    print(content)
     _log.info('Sent email; about: %s; state: %s', about, state)
