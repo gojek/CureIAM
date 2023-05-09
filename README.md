@@ -1,9 +1,13 @@
 <p align="center">
-  <img width="300" height="300" src="./CureIAMLogo.png">
+  <img width="300" height="300" src="assets/images/CureIAMLogo.png">
 </p>
 
-
 # CureIAM
+
+<p align="center">
+  <img src="assets/images/command.png">
+</p>
+
 ### Clean up of over permissioned IAM accounts on GCP infra in an automated way
 CureIAM is an easy-to-use, reliable, and performant engine for Least Privilege Principle Enforcement on GCP cloud infra. It enables DevOps and Security team to quickly clean up accounts in GCP infra that have granted permissions of more than what are required. CureIAM fetches the recommendations and insights from GCP IAM recommender, scores them and enforce those recommendations automatically on daily basic. It takes care of scheduling and all other aspects of running these enforcement jobs at scale. It is built on top of GCP IAM recommender APIs and [Cloudmarker](https://github.com/cloudmarker/cloudmarker) framework.
 
@@ -96,17 +100,18 @@ $ docker run -f cureiam -m cureiam -n
   ```yaml
     plugins:
       gcpCloud:
-        plugin: CureIAM.clouds.gcpcloud.GCPCloudIAMRecommendations
+        plugin: CureIAM.plugins.gcp.gcpcloud.GCPCloudIAMRecommendations
         params:
           key_file_path: cureiamSA.json
 
       filestore:
-        plugin: CureIAM.stores.filestore.FileStore
+        plugin: CureIAM.plugins.files.filestore.FileStore
 
       gcpIamProcessor:
-        plugin: CureIAM.processors.gcpcloudiam.GCPIAMRecommendationProcessor
+        plugin: CureIAM.plugins.gcp.gcpcloudiam.GCPIAMRecommendationProcessor
         params:
-          enable_enforcer: true
+          mode_scan: true
+          mode_enforce: true
           enforcer:
             key_file_path: cureiamSA.json
             allowlist_projects:
@@ -126,8 +131,10 @@ $ docker run -f cureiam -m cureiam -n
             min_safe_to_apply_score_SA: 50
 
       esstore:
-        plugin: CureIAM.stores.esstore.EsStore
+        plugin: CureIAM.plugins.elastic.esstore.EsStore
         params:
+          # Change http to https later if your elastic are using https
+          scheme: http
           host: es-host.com
           port: 9200
           index: cureiam-stg
@@ -175,4 +182,40 @@ The JSON which is indexed in elasticsearch using Elasticsearch store plugin, can
 ## Credits
 Gojek Product Security Team :heart:
 
+## Demo
+<<TBA>>
 
+=============
+# NEW UPDATES May 2023 0.2.0
+## Refactoring
+- Breaking down the large code into multiple small function
+- Moving all plugins into plugins folder: Esstore, files, Cloud and GCP.
+- Adding fixes into zero divide issues
+- Migration to new major version of elastic
+- Change configuration in CureIAM.yaml file
+- Tested in python version 3.9.X
+
+## Library Updates
+Adding the version in library to avoid any back compatibility issues.
+- Elastic==8.7.0 # previously 7.17.9
+- elasticsearch==8.7.0
+- google-api-python-client==2.86.0
+- PyYAML==6.0
+- schedule==1.2.0
+- rich==13.3.5
+
+## Docker Files
+- Adding Docker Compose for local Elastic and Kibana in elastic
+- Adding .env-ex
+change .env-ex to .env to before running the docker
+```
+Running docker compose: docker-compose -f docker_compose_es.yaml up 
+```
+
+## Features
+- Adding the capability to run scan without applying the recommendation. By default, if mode_scan is false, mode_enforce won't be running.
+```
+      mode_scan: true
+      mode_enforce: false
+```
+- Turn off the email function temporarily.
