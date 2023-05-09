@@ -1,9 +1,9 @@
-"""IAM Risk score model class implementation
+""" IAM Risk score model class implementation
 """
 
-import logging
+from CureIAM.helpers import hlogging
 
-_log = logging.getLogger(__name__)
+_log = hlogging.get_logger(__name__)
 
 class IAMRiskScoreModel:
     """IAMRiskScoreModel plugin for GCP IAM Recommendation records."""
@@ -29,7 +29,7 @@ class IAMRiskScoreModel:
         This will work on the paramters and will create risk score and
         safe_to_apply_score
         
-        paramters:
+        parameters:
         - account_type:
             - service_account
             - user_account
@@ -59,6 +59,8 @@ class IAMRiskScoreModel:
             - risk_index ∝ {recommendation_impact_type}
             - risk_index ∝ {total_permissions}
         """
+        # print (self._record)
+
         _account_type = self._record['account_type']
         _suggestion_type = self._record['account_permission_insights_category']
         _used_permissions = int(self._record['account_used_permissions'])
@@ -67,9 +69,12 @@ class IAMRiskScoreModel:
         _excess_permissions = _total_permissions - _used_permissions
         # In case excess permissions are 0, make sure the excess permissions are set to 1, other wise this
         # will throw error in production.
-        if _excess_permissions == 0 :
+        if _excess_permissions < 1 :
             _excess_permissions = 1
-            
+
+        if _total_permissions < 1 :
+            _total_permissions = 1
+           
         _excess_permissions_percent = _excess_permissions / _total_permissions
 
         safe_to_apply_recommendation_score = 0
