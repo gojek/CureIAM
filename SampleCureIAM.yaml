@@ -1,40 +1,46 @@
 # production file
 plugins:
   gcpCloud:
-    plugin: CureIAM.clouds.gcpcloud.GCPCloudIAMRecommendations
+    plugin: CureIAM.plugins.gcp.gcpcloud.GCPCloudIAMRecommendations
     params:
       key_file_path: cureiamSA.json
   filestore:
-    plugin: CureIAM.stores.filestore.FileStore
+    plugin: CureIAM.plugins.files.filestore.FileStore
   gcpIamProcessor:
-    plugin: CureIAM.processors.gcpcloudiam.GCPIAMRecommendationProcessor
+    plugin: CureIAM.plugins.gcp.gcpcloudiam.GCPIAMRecommendationProcessor
     params:
-      enable_enforcer: true
+      mode_scan: true
+      mode_enforce: false
       enforcer:
         key_file_path: cureiamSA.json
-          - foo
-          - bar
         blocklist_projects:
-          - None
+          - project-a
+          - project-b
+          - project-c
         blocklist_accounts:
-          - foo@bar.com
+          - user-a@gmail.com
+          - user-b@gmail.com
+          - serviceAccount-a@project-a.iam.gserviceaccount.com
+          - serviceAccount-b@project-b.iam.gserviceaccount.com
         allowlist_account_types:
           - user
           - group
           - serviceAccount
         blocklist_account_types:
           - None
-        min_safe_to_apply_score_user: 0
-        min_safe_to_apply_score_group: 0
-        min_safe_to_apply_score_SA: 50
+        min_safe_to_apply_score_user: 60
+        min_safe_to_apply_score_group: 60
+        min_safe_to_apply_score_SA: 60
   esstore:
-    plugin: CureIAM.stores.esstore.EsStore
+    plugin: CureIAM.plugins.elastic.esstore.EsStore
     params:
+      # Change http to https later if your elastic are using https
+      scheme: http
       host: es-host.com
       port: 9200
       index: cureiam-stg
-      username: security
-      password: secure-password
+      username: <<username>>
+      password: <<password>>
 
 audits:
   IAMAudit:
@@ -51,37 +57,51 @@ run:
 
 logger:
   version: 1
-
-  disable_existing_loggers: false
-
+  disable_existing_loggers: true
   formatters:
-    verysimple:
-      format: >-
-          [%(process)s]
-          %(name)s:%(lineno)d - %(message)s
+    main:
+      format: "[%(asctime)s][%(process)s][%(processName)s][%(threadName)s] - %(levelname)s
+        %(name)s:%(lineno)d - %(message)s"
       datefmt: "%Y-%m-%d %H:%M:%S"
-
+    standard:
+      format: "[%(process)s][%(processName)s][%(threadName)s] %(message)s"
+      datefmt: "%Y-%m-%d %H:%M:%S"
   handlers:
-    rich_console:
+    main:
+      formatter: main
+      class: logging.StreamHandler
+      stream: ext://sys.stdout
+    console:
+      formatter: standard
+      class: logging.StreamHandler
+      stream: ext://sys.stdout
+    rich:
+      formatter: standard
       class: rich.logging.RichHandler
-      formatter: verysimple
-
     file:
+      formatter: standard
       class: logging.handlers.TimedRotatingFileHandler
-      formatter: simple
-      filename: /tmp/CureIAM.log
+      filename: "/tmp/CureIAM.log"
       when: midnight
       encoding: utf8
       backupCount: 5
-
   loggers:
-    adal-python:
-      level: INFO
-
-  root:
-    level: INFO
-    handlers:
-      - rich_console
+    '':
+      handlers:
       - file
+      - main
+      level: INFO
+      propagate: false
+    CureIAM.plugins.gcp.gcpcloudiam:
+      handlers:
+      - rich
+      level: INFO
+      propagate: false
+    __main__:
+      handlers:
+      - file
+      - main
+      level: INFO
+      propagate: false
 
-schedule: "16:00"
+schedule: "14:00"
